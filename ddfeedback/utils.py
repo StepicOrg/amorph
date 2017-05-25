@@ -1,9 +1,15 @@
 import ast
+import logging
 from typing import List, Iterable, Tuple
 
 from .constants import MatchKind
 from .models import (Identifier, FuncBody, AssignTargets, ListOfNodes, CallArgs, Tree, PatchDeleteNode,
                      PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(name)s %(asctime)s %(levelname)s %(message)s')
+
 
 allowed_nodes = (ast.Module,
                  ast.BinOp,
@@ -195,3 +201,23 @@ def ast2tree(root: ast.AST) -> Tree:
         node.set_pk(i)
 
     return tree
+
+
+def get_description_of_changes(left_code: str, right_code: str) -> List[str]:
+    left_ast = ast.parse(left_code)
+    right_ast = ast.parse(right_code)
+
+    logger.debug('\n%s\n%s', left_code, ast.dump(left_ast))
+    logger.debug('\n%s\n%s', right_code, ast.dump(right_ast))
+
+    left_tree = ast2tree(left_ast)
+    right_tree = ast2tree(right_ast)
+
+    logger.debug('\n%s', pretty_print_tree(left_tree))
+    logger.debug('\n%s', pretty_print_tree(right_tree))
+
+    num, _, result = match_two_tree(left_tree, right_tree)
+
+    patches = get_patches(left_tree, right_tree, result)
+
+    return list(map(lambda patch: patch.get_description(), patches))

@@ -25,9 +25,9 @@ class AssignTargets(ListOfNodes):
 
 
 class Tree(object):
-    def __init__(self, node: ast.AST, pk=None, parent=None, children=None):
+    def __init__(self, node: ast.AST, pk: int = None, parent=None, children=None):
         self.node: ast.AST = node
-        self.pk = pk
+        self.pk: int = pk
         self.name: str = self.get_name_by_node_and_pk(node, pk)
         self.parent: Tree = parent
         self.children: List[Tree] = children or []
@@ -40,7 +40,7 @@ class Tree(object):
         self.pk = pk
         self.name = self.get_name_by_node_and_pk(self.node, self.pk)
 
-    def is_leaf(self):
+    def is_leaf(self) -> bool:
         return len(self.children) == 0
 
     def __str__(self):
@@ -49,7 +49,7 @@ class Tree(object):
                              if not self.is_leaf() else '')
 
     @staticmethod
-    def get_name_by_node_and_pk(node: ast.AST, pk: int):
+    def get_name_by_node_and_pk(node: ast.AST, pk: int) -> str:
         if isinstance(node, Identifier):
             s = f'ID: {node.value}'
         elif isinstance(node, ast.Num):
