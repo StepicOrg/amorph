@@ -3,13 +3,13 @@ import logging
 from typing import List, Iterable, Tuple
 
 from .constants import MatchKind
-from .models import (Identifier, FuncBody, AssignTargets, ListOfNodes, CallArgs, Tree, PatchDeleteNode,
-                     PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch)
+from .models import (Identifier, Body, Targets, ListOfNodes, CallArgs, Tree, PatchDeleteNode,
+                     PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch, DecoratorList,
+                     ClassBases, Keywords)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)s %(asctime)s %(levelname)s %(message)s')
-
 
 allowed_nodes = (ast.Module,
                  ast.BinOp,
@@ -24,6 +24,10 @@ allowed_nodes = (ast.Module,
                  ast.Call,
                  ast.expr_context,
                  ast.Assign,
+                 ast.ClassDef,
+                 ast.keyword,
+                 ast.Delete,
+                 ast.AugAssign,
                  Identifier,
                  ListOfNodes)
 
@@ -54,7 +58,8 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return [root.value]
 
     if isinstance(root, ast.FunctionDef):
-        return [Identifier(value=root.name), root.args, FuncBody(values=root.body)]
+        return [Identifier(value=root.name), root.args, Body(values=root.body),
+                DecoratorList(values=root.decorator_list)]
 
     if isinstance(root, ast.arguments):
         return root.args
@@ -66,7 +71,28 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return [root.func, CallArgs(values=root.args)]
 
     if isinstance(root, ast.Assign):
-        return [AssignTargets(values=root.targets), root.value]
+        return [Targets(values=root.targets), root.value]
+
+    if isinstance(root, ast.ClassDef):
+        children = [Identifier(value=root.name), ClassBases(values=root.bases),
+                    Keywords(values=root.keywords), Body(values=root.body),
+                    DecoratorList(values=root.decorator_list)]
+        if root.starargs is not None:
+            children.append(root.starargs)
+
+        if root.kwargs is not None:
+            children.append(root.kwargs)
+
+        return children
+
+    if isinstance(root, ast.keyword):
+        return [Identifier(value=root.arg), root.value]
+
+    if isinstance(root, ast.Delete):
+        return root.targets
+
+    if isinstance(root, ast.AugAssign):
+        return [root.target, root.op, root.value]
 
     if isinstance(root, ListOfNodes):
         return root.values

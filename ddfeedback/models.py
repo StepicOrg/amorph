@@ -12,7 +12,19 @@ class ListOfNodes(ast.AST):
     values: list
 
 
-class FuncBody(ListOfNodes):
+class Body(ListOfNodes):
+    pass
+
+
+class DecoratorList(ListOfNodes):
+    pass
+
+
+class ClassBases(ListOfNodes):
+    pass
+
+
+class Keywords(ListOfNodes):
     pass
 
 
@@ -20,7 +32,7 @@ class CallArgs(ListOfNodes):
     pass
 
 
-class AssignTargets(ListOfNodes):
+class Targets(ListOfNodes):
     pass
 
 
