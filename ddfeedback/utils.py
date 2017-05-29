@@ -45,7 +45,9 @@ allowed_nodes = (ast.Module,
                  ast.Break,
                  ast.Continue,
                  ast.BoolOp,
+                 ast.boolop,
                  ast.UnaryOp,
+                 ast.unaryop,
                  ast.Lambda,
                  ast.IfExp,
                  ast.Dict,
@@ -71,7 +73,9 @@ allowed_nodes = (ast.Module,
                  ast.Starred,
                  ast.List,
                  ast.Tuple,
+                 type(None),
                  Identifier,
+                 IntValue,
                  ListOfNodes)
 
 
@@ -104,9 +108,10 @@ def get_children(root: ast.AST) -> List[ast.AST]:
     if isinstance(root, ast.BinOp):
         return [root.left, root.op, root.right]
 
-    if isinstance(root, (ast.Num, ast.expr_context, Identifier, ast.operator,
+    if isinstance(root, (ast.Num, ast.expr_context, Identifier, IntValue, ast.operator,
                          ast.Pass, ast.Break, ast.Continue, ast.boolop, ast.unaryop,
-                         ast.cmpop, ast.Str, ast.Bytes, ast.NameConstant, ast.Ellipsis)):
+                         ast.cmpop, ast.Str, ast.Bytes, ast.NameConstant, ast.Ellipsis,
+                         type(None))):
         return []
 
     if isinstance(root, ast.Name):
@@ -138,8 +143,7 @@ def get_children(root: ast.AST) -> List[ast.AST]:
     if isinstance(root, ast.Call):
         return filter_none([root.func,
                             ListOfNodes(values=root.args, name='CallArgs'),
-                            ListOfNodes(values=root.keywords, name='Keywords'),
-                            root.starargs, root.kwargs])
+                            ListOfNodes(values=root.keywords, name='Keywords')])
 
     if isinstance(root, ast.Assign):
         return [ListOfNodes(values=root.targets, name='Targets'), root.value]
@@ -148,7 +152,6 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return [Identifier(value=root.name),
                 ListOfNodes(values=root.bases, name='ClassBases'),
                 ListOfNodes(values=root.keywords, name='Keywords'),
-                root.starargs, root.kwargs,
                 ListOfNodes(values=root.body, name='Body'),
                 ListOfNodes(values=root.decorator_list, name='DecoratorList')]
 
@@ -204,13 +207,13 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return root.names
 
     if isinstance(root, ast.ImportFrom):
-        return filter_none([root.module,
+        return filter_none([Identifier(value=root.module),
                             ListOfNodes(values=root.names, name='Names'),
                             IntValue(value=root.level)])
 
     if isinstance(root, (ast.Global, ast.Nonlocal)):
         # noinspection PyUnresolvedReferences
-        return root.names
+        return list(map(lambda name: Identifier(value=name), root.names))
 
     if isinstance(root, ast.BoolOp):
         return [root.op, ListOfNodes(values=root.values, name='Values')]
@@ -280,7 +283,7 @@ def get_children(root: ast.AST) -> List[ast.AST]:
     if isinstance(root, ListOfNodes):
         return root.values
 
-    assert False
+    assert False, f'unknown type of node: {type(root)}'
 
 
 def get_children_pairs(left_tree: Tree, right_tree: Tree) -> Iterable[Tuple[Tree, Tree]]:
