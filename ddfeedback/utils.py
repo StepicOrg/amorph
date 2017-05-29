@@ -3,13 +3,12 @@ import logging
 from typing import List, Iterable, Tuple
 
 from .constants import MatchKind
-from .models import (Identifier, FuncBody, AssignTargets, ListOfNodes, CallArgs, Tree, PatchDeleteNode,
-                     PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch)
+from .models import (Identifier, ListOfNodes, Tree, PatchDeleteNode,
+                     PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch, IntValue)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,
                     format='%(name)s %(asctime)s %(levelname)s %(message)s')
-
 
 allowed_nodes = (ast.Module,
                  ast.BinOp,
@@ -24,12 +23,80 @@ allowed_nodes = (ast.Module,
                  ast.Call,
                  ast.expr_context,
                  ast.Assign,
+                 ast.ClassDef,
+                 ast.keyword,
+                 ast.Delete,
+                 ast.AugAssign,
+                 ast.For,
+                 ast.While,
+                 ast.If,
+                 ast.withitem,
+                 ast.With,
+                 ast.Raise,
+                 ast.excepthandler,
+                 ast.Try,
+                 ast.Assert,
+                 ast.alias,
+                 ast.Import,
+                 ast.ImportFrom,
+                 ast.Global,
+                 ast.Nonlocal,
+                 ast.Pass,
+                 ast.Break,
+                 ast.Continue,
+                 ast.BoolOp,
+                 ast.boolop,
+                 ast.UnaryOp,
+                 ast.unaryop,
+                 ast.Lambda,
+                 ast.IfExp,
+                 ast.Dict,
+                 ast.Set,
+                 ast.comprehension,
+                 ast.ListComp,
+                 ast.SetComp,
+                 ast.GeneratorExp,
+                 ast.DictComp,
+                 ast.Yield,
+                 ast.YieldFrom,
+                 ast.cmpop,
+                 ast.Compare,
+                 ast.Ellipsis,
+                 ast.Str,
+                 ast.Bytes,
+                 ast.NameConstant,
+                 ast.Attribute,
+                 ast.Subscript,
+                 ast.Slice,
+                 ast.ExtSlice,
+                 ast.Index,
+                 ast.Starred,
+                 ast.List,
+                 ast.Tuple,
+                 type(None),
                  Identifier,
+                 IntValue,
                  ListOfNodes)
 
 
 def check_node_type(node):
     assert isinstance(node, allowed_nodes), '{} not allowed'.format(type(node).__name__)
+
+
+def filter_none(lst):
+    def f(item):
+        if item is None:
+            return False
+
+        if isinstance(item, (Identifier, IntValue)):
+            return item.value is not None
+
+        if isinstance(item, ListOfNodes):
+            return item.values is not None
+
+        return True
+
+    return list(filter(f, lst))
 
 
 def get_children(root: ast.AST) -> List[ast.AST]:
@@ -41,37 +108,182 @@ def get_children(root: ast.AST) -> List[ast.AST]:
     if isinstance(root, ast.BinOp):
         return [root.left, root.op, root.right]
 
-    if isinstance(root, (ast.Num, ast.expr_context, Identifier, ast.operator)):
+    if isinstance(root, (ast.Num, ast.expr_context, Identifier, IntValue, ast.operator,
+                         ast.Pass, ast.Break, ast.Continue, ast.boolop, ast.unaryop,
+                         ast.cmpop, ast.Str, ast.Bytes, ast.NameConstant, ast.Ellipsis,
+                         type(None))):
         return []
 
     if isinstance(root, ast.Name):
         return [Identifier(value=root.id), root.ctx]
 
     if isinstance(root, ast.Return):
-        return [root.value] if root.value else []
+        return filter_none([root.value])
 
     if isinstance(root, ast.Expr):
         return [root.value]
 
     if isinstance(root, ast.FunctionDef):
-        return [Identifier(value=root.name), root.args, FuncBody(values=root.body)]
+        return [Identifier(value=root.name),
+                root.args,
+                ListOfNodes(values=root.body, name='Body'),
+                ListOfNodes(values=root.decorator_list, name='DecoratorList')]
 
     if isinstance(root, ast.arguments):
-        return root.args
+        return filter_none([ListOfNodes(values=root.args, name='Args'),
+                            root.vararg,
+                            ListOfNodes(values=root.kwonlyargs, name='Kwonlyargs'),
+                            ListOfNodes(values=root.kw_defaults, name='Kw_defaults'),
+                            root.kwarg,
+                            ListOfNodes(values=root.defaults, name='Defaults')])
 
     if isinstance(root, ast.arg):
-        return [Identifier(value=root.arg)]
+        return filter_none([Identifier(value=root.arg), root.annotation])
 
     if isinstance(root, ast.Call):
-        return [root.func, CallArgs(values=root.args)]
+        return filter_none([root.func,
+                            ListOfNodes(values=root.args, name='CallArgs'),
+                            ListOfNodes(values=root.keywords, name='Keywords')])
 
     if isinstance(root, ast.Assign):
-        return [AssignTargets(values=root.targets), root.value]
+        return [ListOfNodes(values=root.targets, name='Targets'), root.value]
+
+    if isinstance(root, ast.ClassDef):
+        return [Identifier(value=root.name),
+                ListOfNodes(values=root.bases, name='ClassBases'),
+                ListOfNodes(values=root.keywords, name='Keywords'),
+                ListOfNodes(values=root.body, name='Body'),
+                ListOfNodes(values=root.decorator_list, name='DecoratorList')]
+
+    if isinstance(root, ast.keyword):
+        return [Identifier(value=root.arg), root.value]
+
+    if isinstance(root, ast.Delete):
+        return root.targets
+
+    if isinstance(root, ast.AugAssign):
+        return [root.target, root.op, root.value]
+
+    if isinstance(root, ast.For):
+        return [root.target, root.iter,
+                ListOfNodes(values=root.body, name='Body'),
+                ListOfNodes(values=root.orelse, name='Else')]
+
+    if isinstance(root, (ast.While, ast.If)):
+        # noinspection PyUnresolvedReferences
+        return [root.test,
+                ListOfNodes(values=root.body, name='Body'),
+                ListOfNodes(values=root.orelse, name='Else')]
+
+    if isinstance(root, ast.withitem):
+        return filter_none([root.context_expr, root.optional_vars])
+
+    if isinstance(root, ast.With):
+        return [ListOfNodes(values=root.items, name='WithItems'),
+                ListOfNodes(values=root.body, name='Body')]
+
+    if isinstance(root, ast.Raise):
+        return filter_none([root.exc, root.cause])
+
+    if isinstance(root, ast.excepthandler):
+        return filter_none([root.type,
+                            Identifier(value=root.name),
+                            ListOfNodes(values=root.body, name='Body')])
+
+    if isinstance(root, ast.Try):
+        return [ListOfNodes(values=root.body, name='Body'),
+                ListOfNodes(values=root.handlers, name='Excepthandlers'),
+                ListOfNodes(values=root.orelse, name='Else'),
+                ListOfNodes(values=root.body, name='Body')]
+
+    if isinstance(root, ast.Assert):
+        return filter_none([root.test, root.msg])
+
+    if isinstance(root, ast.alias):
+        return filter_none([Identifier(value=root.name),
+                            Identifier(value=root.asname)])
+
+    if isinstance(root, ast.Import):
+        return root.names
+
+    if isinstance(root, ast.ImportFrom):
+        return filter_none([Identifier(value=root.module),
+                            ListOfNodes(values=root.names, name='Names'),
+                            IntValue(value=root.level)])
+
+    if isinstance(root, (ast.Global, ast.Nonlocal)):
+        # noinspection PyUnresolvedReferences
+        return list(map(lambda name: Identifier(value=name), root.names))
+
+    if isinstance(root, ast.BoolOp):
+        return [root.op, ListOfNodes(values=root.values, name='Values')]
+
+    if isinstance(root, ast.UnaryOp):
+        return [root.op, root.operand]
+
+    if isinstance(root, ast.Lambda):
+        return [root.args, root.body]
+
+    if isinstance(root, ast.IfExp):
+        return [root.test, root.body, root.orelse]
+
+    if isinstance(root, ast.Dict):
+        return [ListOfNodes(values=root.keys, name='Keys'),
+                ListOfNodes(values=root.values, name='Values')]
+
+    if isinstance(root, ast.Set):
+        return root.elts
+
+    if isinstance(root, ast.comprehension):
+        return [root.target, root.iter,
+                ListOfNodes(values=root.ifs, name='Ifs')]
+
+    if isinstance(root, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
+        # noinspection PyUnresolvedReferences
+        return [root.elt,
+                ListOfNodes(values=root.generators, name='Generators')]
+
+    if isinstance(root, ast.DictComp):
+        return [root.key, root.value,
+                ListOfNodes(values=root.generators, name='Generators')]
+
+    if isinstance(root, ast.Yield):
+        return filter_none([root.value])
+
+    if isinstance(root, ast.YieldFrom):
+        return [root.value]
+
+    if isinstance(root, ast.Compare):
+        return [root.left,
+                ListOfNodes(values=root.ops, name='Ops'),
+                ListOfNodes(values=root.comparators, name='Comparators')]
+
+    if isinstance(root, ast.Attribute):
+        return [root.value, Identifier(value=root.attr), root.ctx]
+
+    if isinstance(root, ast.Slice):
+        return filter_none([root.lower, root.upper, root.step])
+
+    if isinstance(root, ast.ExtSlice):
+        return root.dims
+
+    if isinstance(root, ast.Index):
+        return [root.value]
+
+    if isinstance(root, ast.Subscript):
+        return [root.value, root.slice, root.ctx]
+
+    if isinstance(root, ast.Starred):
+        return [root.value, root.ctx]
+
+    if isinstance(root, (ast.List, ast.Tuple)):
+        # noinspection PyUnresolvedReferences
+        return [ListOfNodes(values=root.elts, name='elts'), root.ctx]
 
     if isinstance(root, ListOfNodes):
         return root.values
 
-    assert False
+    assert False, f'unknown type of node: {type(root)}'
 
 
 def get_children_pairs(left_tree: Tree, right_tree: Tree) -> Iterable[Tuple[Tree, Tree]]:
@@ -82,12 +294,15 @@ def match_two_ast_nodes(left: ast.AST, right: ast.AST) -> bool:
     if type(left) != type(right):
         return False
 
-    if isinstance(left, Identifier):
+    if isinstance(left, (Identifier, IntValue, ast.NameConstant)):
         return left.value == right.value
 
     if isinstance(left, ast.Num):
-        assert isinstance(right, ast.Num)
         return left.n == right.n
+
+    if isinstance(left, (ast.Str, ast.Bytes)):
+        # noinspection PyUnresolvedReferences
+        return left.s == right.s
 
     return True
 

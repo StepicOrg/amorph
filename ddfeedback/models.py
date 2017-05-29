@@ -8,20 +8,13 @@ class Identifier(ast.AST):
     value: str
 
 
+class IntValue(ast.AST):
+    value: int
+
+
 class ListOfNodes(ast.AST):
-    values: list
-
-
-class FuncBody(ListOfNodes):
-    pass
-
-
-class CallArgs(ListOfNodes):
-    pass
-
-
-class AssignTargets(ListOfNodes):
-    pass
+    values: List[ast.AST]
+    name: str
 
 
 class Tree(object):
@@ -54,6 +47,8 @@ class Tree(object):
             s = f'ID: {node.value}'
         elif isinstance(node, ast.Num):
             s = f'Num: {node.n}'
+        elif isinstance(node, ListOfNodes):
+            s = node.name
         else:
             s = type(node).__name__
         return f'{pk}_{s}' if pk is not None else s
