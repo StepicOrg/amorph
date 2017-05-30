@@ -83,7 +83,7 @@ def check_node_type(node):
     assert isinstance(node, allowed_nodes), '{} not allowed'.format(type(node).__name__)
 
 
-def filter_none(lst):
+def filter_empty(*args):
     def f(item):
         if item is None:
             return False
@@ -92,11 +92,11 @@ def filter_none(lst):
             return item.value is not None
 
         if isinstance(item, ListOfNodes):
-            return item.values is not None
+            return bool(item.values)
 
         return True
 
-    return list(filter(f, lst))
+    return list(filter(f, args))
 
 
 def get_children(root: ast.AST) -> List[ast.AST]:
@@ -118,42 +118,42 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return [Identifier(value=root.id), root.ctx]
 
     if isinstance(root, ast.Return):
-        return filter_none([root.value])
+        return filter_empty(root.value)
 
     if isinstance(root, ast.Expr):
         return [root.value]
 
     if isinstance(root, ast.FunctionDef):
-        return [Identifier(value=root.name),
-                root.args,
-                ListOfNodes(values=root.body, name='Body'),
-                ListOfNodes(values=root.decorator_list, name='DecoratorList')]
+        return filter_empty(Identifier(value=root.name),
+                            root.args,
+                            ListOfNodes(values=root.body, name='Body'),
+                            ListOfNodes(values=root.decorator_list, name='DecoratorList'))
 
     if isinstance(root, ast.arguments):
-        return filter_none([ListOfNodes(values=root.args, name='Args'),
+        return filter_empty(ListOfNodes(values=root.args, name='Args'),
                             root.vararg,
                             ListOfNodes(values=root.kwonlyargs, name='Kwonlyargs'),
                             ListOfNodes(values=root.kw_defaults, name='Kw_defaults'),
                             root.kwarg,
-                            ListOfNodes(values=root.defaults, name='Defaults')])
+                            ListOfNodes(values=root.defaults, name='Defaults'))
 
     if isinstance(root, ast.arg):
-        return filter_none([Identifier(value=root.arg), root.annotation])
+        return filter_empty(Identifier(value=root.arg), root.annotation)
 
     if isinstance(root, ast.Call):
-        return filter_none([root.func,
+        return filter_empty(root.func,
                             ListOfNodes(values=root.args, name='CallArgs'),
-                            ListOfNodes(values=root.keywords, name='Keywords')])
+                            ListOfNodes(values=root.keywords, name='Keywords'))
 
     if isinstance(root, ast.Assign):
         return [ListOfNodes(values=root.targets, name='Targets'), root.value]
 
     if isinstance(root, ast.ClassDef):
-        return [Identifier(value=root.name),
-                ListOfNodes(values=root.bases, name='ClassBases'),
-                ListOfNodes(values=root.keywords, name='Keywords'),
-                ListOfNodes(values=root.body, name='Body'),
-                ListOfNodes(values=root.decorator_list, name='DecoratorList')]
+        return filter_empty(Identifier(value=root.name),
+                            ListOfNodes(values=root.bases, name='ClassBases'),
+                            ListOfNodes(values=root.keywords, name='Keywords'),
+                            ListOfNodes(values=root.body, name='Body'),
+                            ListOfNodes(values=root.decorator_list, name='DecoratorList'))
 
     if isinstance(root, ast.keyword):
         return [Identifier(value=root.arg), root.value]
@@ -176,19 +176,19 @@ def get_children(root: ast.AST) -> List[ast.AST]:
                 ListOfNodes(values=root.orelse, name='Else')]
 
     if isinstance(root, ast.withitem):
-        return filter_none([root.context_expr, root.optional_vars])
+        return filter_empty(root.context_expr, root.optional_vars)
 
     if isinstance(root, ast.With):
         return [ListOfNodes(values=root.items, name='WithItems'),
                 ListOfNodes(values=root.body, name='Body')]
 
     if isinstance(root, ast.Raise):
-        return filter_none([root.exc, root.cause])
+        return filter_empty(root.exc, root.cause)
 
     if isinstance(root, ast.excepthandler):
-        return filter_none([root.type,
+        return filter_empty(root.type,
                             Identifier(value=root.name),
-                            ListOfNodes(values=root.body, name='Body')])
+                            ListOfNodes(values=root.body, name='Body'))
 
     if isinstance(root, ast.Try):
         return [ListOfNodes(values=root.body, name='Body'),
@@ -197,19 +197,19 @@ def get_children(root: ast.AST) -> List[ast.AST]:
                 ListOfNodes(values=root.body, name='Body')]
 
     if isinstance(root, ast.Assert):
-        return filter_none([root.test, root.msg])
+        return filter_empty(root.test, root.msg)
 
     if isinstance(root, ast.alias):
-        return filter_none([Identifier(value=root.name),
-                            Identifier(value=root.asname)])
+        return filter_empty(Identifier(value=root.name),
+                            Identifier(value=root.asname))
 
     if isinstance(root, ast.Import):
         return root.names
 
     if isinstance(root, ast.ImportFrom):
-        return filter_none([Identifier(value=root.module),
+        return filter_empty(Identifier(value=root.module),
                             ListOfNodes(values=root.names, name='Names'),
-                            IntValue(value=root.level)])
+                            IntValue(value=root.level))
 
     if isinstance(root, (ast.Global, ast.Nonlocal)):
         # noinspection PyUnresolvedReferences
@@ -248,7 +248,7 @@ def get_children(root: ast.AST) -> List[ast.AST]:
                 ListOfNodes(values=root.generators, name='Generators')]
 
     if isinstance(root, ast.Yield):
-        return filter_none([root.value])
+        return filter_empty(root.value)
 
     if isinstance(root, ast.YieldFrom):
         return [root.value]
@@ -262,7 +262,7 @@ def get_children(root: ast.AST) -> List[ast.AST]:
         return [root.value, Identifier(value=root.attr), root.ctx]
 
     if isinstance(root, ast.Slice):
-        return filter_none([root.lower, root.upper, root.step])
+        return filter_empty(root.lower, root.upper, root.step)
 
     if isinstance(root, ast.ExtSlice):
         return root.dims
