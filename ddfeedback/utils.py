@@ -423,7 +423,7 @@ def ast2tree(root: ast.AST) -> Tree:
 
     tree = _ast2tree(root)
     for i, node in enumerate(preorder(tree)):
-        node.set_pk(i)
+        node.pk = i
 
     return tree
 

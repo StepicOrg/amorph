@@ -21,17 +21,24 @@ class Tree(object):
     def __init__(self, node: ast.AST, pk: int = None, parent=None, children=None):
         self.node: ast.AST = node
         self.pk: int = pk
-        self.name: str = self.get_name_by_node_and_pk(node, pk)
         self.parent: Tree = parent
         self.children: List[Tree] = children or []
+
+    @property
+    def name(self) -> str:
+        if isinstance(self.node, Identifier):
+            s = f'ID: {self.node.value}'
+        elif isinstance(self.node, ast.Num):
+            s = f'Num: {self.node.n}'
+        elif isinstance(self.node, ListOfNodes):
+            s = self.node.name
+        else:
+            s = type(self.node).__name__
+        return f'{self.pk}_{s}' if self.pk is not None else s
 
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
-
-    def set_pk(self, pk):
-        self.pk = pk
-        self.name = self.get_name_by_node_and_pk(self.node, self.pk)
 
     def is_leaf(self) -> bool:
         return len(self.children) == 0
@@ -40,18 +47,6 @@ class Tree(object):
         return '{}{}'.format(self.name,
                              ': [{}]'.format(', '.join(map(str, self.children)))
                              if not self.is_leaf() else '')
-
-    @staticmethod
-    def get_name_by_node_and_pk(node: ast.AST, pk: int) -> str:
-        if isinstance(node, Identifier):
-            s = f'ID: {node.value}'
-        elif isinstance(node, ast.Num):
-            s = f'Num: {node.n}'
-        elif isinstance(node, ListOfNodes):
-            s = node.name
-        else:
-            s = type(node).__name__
-        return f'{pk}_{s}' if pk is not None else s
 
 
 class Patch(object):
