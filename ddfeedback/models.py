@@ -79,52 +79,49 @@ class PatchInsertUnder(Patch):
     node: Tree
     inserted_tree: Tree
 
-    def __init__(self, node: Tree, inserted_tree: Tree):
+    def __init__(self, node: Tree, inserted_trees: List[Tree]):
         self.node = node
-        self.inserted_tree = inserted_tree
+        self.inserted_trees = inserted_trees
 
     def get_description(self) -> str:
-        return f'insert tree="{self.inserted_tree}" under node="{self.node.name}"'
+        return f'insert tree="{self.inserted_trees}" under node="{self.node.name}"'
 
 
 class PatchInsertAbove(Patch):
     kind: PatchKind = PatchKind.INSERT_ABOVE
     node: Tree
     inserted_tree: Tree
-    new_child_position: int
+    new_child_position: List[int]
 
-    def __init__(self, node: Tree, inserted_tree: Tree, new_child_position: int):
+    def __init__(self, node: Tree, inserted_tree: Tree, new_child_position: List[int]):
         self.node = node
         self.inserted_tree = inserted_tree
         self.new_child_position = new_child_position
 
     def get_description(self) -> str:
-        child = self.inserted_tree.children[self.new_child_position]
-        self.inserted_tree.children[self.new_child_position] = 'Place_for_child_node'
+        child = self.inserted_tree.children[self.new_child_position[0]]
+        for pos in self.new_child_position[1:]:
+            child = child.children[pos]
+        child.parent.children[self.new_child_position[-1]] = 'Place_for_child_node'
         inserted_tree = str(self.inserted_tree)
-        self.inserted_tree.children[self.new_child_position] = child
+        child.parent.children[self.new_child_position[-1]] = child
         return f'insert tree="{inserted_tree}" ' \
                f'above node="{self.node.name}" ' \
                f'new_child_position={self.new_child_position}'
 
 
-class PatchDeleteNode(Patch):
-    kind: PatchKind = PatchKind.DELETE_NODE
-    node: Tree
+class PatchDelete(Patch):
+    kind: PatchKind = PatchKind.DELETE
+    tree: Tree
+    delete_root: bool
+    not_deleted_descendants: List[int]
 
-    def __init__(self, node: Tree):
-        self.node = node
-
-    def get_description(self) -> str:
-        return f'delete node "{self.node.name}"'
-
-
-class PatchDeleteSubtree(Patch):
-    kind: PatchKind = PatchKind.DELETE_SUBTREE
-    root: Tree
-
-    def __init__(self, root: Tree):
-        self.root = root
+    def __init__(self, tree: Tree, delete_root: bool, not_deleted_descendants: List[int]):
+        self.tree = tree
+        self.delete_root = delete_root
+        self.not_deleted_descendants = not_deleted_descendants
 
     def get_description(self) -> str:
-        return f'delete subtree with root="{self.root.name}"'
+        return f'delete tree "{self.tree.name}"; ' \
+               f'delete_root = {self.delete_root}; ' \
+               f'not_deleted_descendants = {self.not_deleted_descendants};'

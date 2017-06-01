@@ -11,5 +11,4 @@ class PatchKind(Enum):
     EDIT = 1
     INSERT_UNDER = 2
     INSERT_ABOVE = 3
-    DELETE_NODE = 4
-    DELETE_SUBTREE = 5
+    DELETE = 4

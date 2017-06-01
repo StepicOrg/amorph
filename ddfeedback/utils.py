@@ -3,8 +3,8 @@ import logging
 from typing import List, Iterable, Tuple
 
 from .constants import MatchKind
-from .models import (Identifier, ListOfNodes, Tree, PatchDeleteNode,
-                     PatchDeleteSubtree, PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch, IntValue)
+from .models import (Identifier, ListOfNodes, Tree, PatchDelete,
+                     PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch, IntValue)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG,
@@ -351,34 +351,44 @@ def get_patches(left_tree: Tree, right_tree: Tree, res: dict, patches: list = No
     _, (kind, ind) = res.get((left_tree, right_tree))
     if kind == MatchKind.ROOT_ROOT:
         if len(left_tree.children) > len(right_tree.children):
-            for child in left_tree.children[len(right_tree.children):]:
-                patches.append(PatchDeleteSubtree(root=child))
+            not_deleted_descendants = list(range(len(left_tree.children)))
+            patches.append(PatchDelete(tree=left_tree,
+                                       delete_root=False,
+                                       not_deleted_descendants=not_deleted_descendants))
 
         if len(right_tree.children) > len(left_tree.children):
-            for child in right_tree.children[len(left_tree.children):]:
-                patches.append(PatchInsertUnder(node=left_tree,
-                                                inserted_tree=child))
+            inserted_trees = right_tree.children[len(left_tree.children):]
+            patches.append(PatchInsertUnder(node=left_tree,
+                                            inserted_trees=inserted_trees))
 
         if ind == 0:
             patches.append(PatchEdit(node_from=left_tree, node_to=right_tree))
 
         for l, r in zip(left_tree.children, right_tree.children):
-            patches.extend(get_patches(l, r, res))
+            patches = get_patches(l, r, res, patches)
 
         return patches
     elif kind == MatchKind.ROOT_CHILD:
-        patches.append(PatchInsertAbove(node=left_tree,
-                                        inserted_tree=right_tree,
-                                        new_child_position=ind))
-        patches.extend(get_patches(left_tree, right_tree.children[ind], res))
-        return patches
+        if (patches
+                and isinstance(patches[-1], PatchInsertAbove)
+                and left_tree == patches[-1].node):
+            patches[-1].new_child_position.append(ind)
+        else:
+            patches.append(PatchInsertAbove(node=left_tree,
+                                            inserted_tree=right_tree,
+                                            new_child_position=[ind]))
+        return get_patches(left_tree, right_tree.children[ind], res, patches)
     elif kind == MatchKind.CHILD_ROOT:
-        for i, child in enumerate(left_tree.children):
-            if i != ind:
-                patches.append(PatchDeleteSubtree(root=child))
-        patches.append(PatchDeleteNode(node=left_tree))
-        patches.extend(get_patches(left_tree.children[ind], right_tree, res))
-        return patches
+        if (patches
+                and isinstance(patches[-1], PatchDelete)
+                and is_descendant(left_tree, patches[-1].tree)):
+            patches[-1].not_deleted_descendants.append(ind)
+        else:
+            not_deleted_descendants = [ind]
+            patches.append(PatchDelete(tree=left_tree,
+                                       delete_root=True,
+                                       not_deleted_descendants=not_deleted_descendants))
+        return get_patches(left_tree.children[ind], right_tree, res, patches)
 
     assert False, f'unknown kind: {kind}'
 
@@ -436,3 +446,10 @@ def get_description_of_changes(left_code: str, right_code: str) -> List[str]:
     patches = get_patches(left_tree, right_tree, result)
 
     return list(map(lambda patch: patch.get_description(), patches))
+
+def is_descendant(descendant: Tree, ancestor: Tree) -> bool:
+    while descendant is not None:
+        if descendant in ancestor.children:
+            return True
+        descendant = descendant.parent
+    return False
