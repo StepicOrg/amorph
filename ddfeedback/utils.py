@@ -1,6 +1,6 @@
 import ast
 import logging
-from typing import List, Iterable, Tuple
+from typing import List, Iterable, Tuple, Optional
 
 from .constants import MatchKind
 from .models import (Identifier, ListOfNodes, Tree, PatchDelete,
@@ -428,7 +428,7 @@ def ast2tree(root: ast.AST) -> Tree:
     return tree
 
 
-def get_description_of_changes(left_code: str, right_code: str) -> List[str]:
+def get_description_of_changes(left_code: str, right_code: str) -> List[Tuple[str, int]]:
     left_ast = ast.parse(left_code)
     right_ast = ast.parse(right_code)
 
@@ -445,7 +445,8 @@ def get_description_of_changes(left_code: str, right_code: str) -> List[str]:
 
     patches = get_patches(left_tree, right_tree, result)
 
-    return list(map(lambda patch: patch.get_description(), patches))
+    return list(map(lambda patch: (patch.get_description(), patch.get_weight()), patches))
+
 
 def is_descendant(descendant: Tree, ancestor: Tree) -> bool:
     while descendant is not None:
@@ -453,3 +454,20 @@ def is_descendant(descendant: Tree, ancestor: Tree) -> bool:
             return True
         descendant = descendant.parent
     return False
+
+
+def get_child_by_path(root: Tree, path: List[int]) -> Optional[Tree]:
+    if not path:
+        return root
+
+    try:
+        child = root.children[path[0]]
+        for pos in path[1:]:
+            child = child.children[pos]
+    except IndexError:
+        child = None
+    return child
+
+
+def tree_size(tree: Tree) -> int:
+    return len(preorder(tree))

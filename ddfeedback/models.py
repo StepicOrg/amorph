@@ -55,6 +55,9 @@ class Patch(object):
     def get_description(self) -> str:
         raise NotImplementedError
 
+    def get_weight(self) -> int:
+        raise NotImplementedError
+
 
 class PatchEdit(Patch):
     kind: PatchKind = PatchKind.EDIT
@@ -68,11 +71,14 @@ class PatchEdit(Patch):
     def get_description(self) -> str:
         return f'change "{self.node_from.name}" to "{self.node_to.name}"'
 
+    def get_weight(self) -> int:
+        return 1
+
 
 class PatchInsertUnder(Patch):
     kind: PatchKind = PatchKind.INSERT_UNDER
     node: Tree
-    inserted_tree: Tree
+    inserted_trees: Tree
 
     def __init__(self, node: Tree, inserted_trees: List[Tree]):
         self.node = node
@@ -80,6 +86,10 @@ class PatchInsertUnder(Patch):
 
     def get_description(self) -> str:
         return f'insert tree="{self.inserted_trees}" under node="{self.node.name}"'
+
+    def get_weight(self) -> int:
+        from .utils import tree_size
+        return sum(map(tree_size, self.inserted_trees))
 
 
 class PatchInsertAbove(Patch):
@@ -104,6 +114,14 @@ class PatchInsertAbove(Patch):
                f'above node="{self.node.name}" ' \
                f'new_child_position={self.new_child_position}'
 
+    def get_weight(self) -> int:
+        from .utils import tree_size, get_child_by_path
+        all_nodes = tree_size(self.inserted_tree)
+        child = get_child_by_path(self.inserted_tree, self.new_child_position)
+        if child is not None:
+            return all_nodes - tree_size(child)
+        return all_nodes
+
 
 class PatchDelete(Patch):
     kind: PatchKind = PatchKind.DELETE
@@ -120,3 +138,21 @@ class PatchDelete(Patch):
         return f'delete tree "{self.tree.name}"; ' \
                f'delete_root = {self.delete_root}; ' \
                f'not_deleted_descendants = {self.not_deleted_descendants};'
+
+    def get_weight(self) -> int:
+        from .utils import tree_size, get_child_by_path
+
+        if self.delete_root:
+            all_nodes = tree_size(self.tree)
+            child = get_child_by_path(self.tree, self.not_deleted_descendants)
+            if child is not None:
+                return all_nodes - tree_size(child)
+            return all_nodes
+
+        else:
+            deleted_nodes = 0
+            not_deleted = set(self.not_deleted_descendants)
+            for i, child in enumerate(self.tree.children):
+                if i not in not_deleted:
+                    deleted_nodes += tree_size(child)
+            return deleted_nodes
