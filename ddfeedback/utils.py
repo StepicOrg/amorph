@@ -2,6 +2,8 @@ import ast
 import logging
 from typing import List, Iterable, Tuple, Optional
 
+import io
+
 from .constants import MatchKind
 from .models import (Identifier, ListOfNodes, Tree, PatchDelete,
                      PatchInsertAbove, PatchEdit, PatchInsertUnder, Patch, IntValue)
@@ -471,3 +473,111 @@ def get_child_by_path(root: Tree, path: List[int]) -> Optional[Tree]:
 
 def tree_size(tree: Tree) -> int:
     return len(preorder(tree))
+
+
+def tree2source(root: Tree, indent=' ' * 4) -> str:
+    def _tree2source(r: Tree, lvl: int, output: io.StringIO):
+        if isinstance(r.node, ast.Module):
+            for child in r.children:
+                output.write(lvl * indent)
+                _tree2source(child, lvl, output)
+                output.write('\n')
+
+        elif isinstance(r.node, ast.BinOp):
+            left, op, right = r.children
+            output.write('(')
+            _tree2source(left, lvl, output)
+            output.write(' ')
+            _tree2source(op, lvl, output)
+            output.write(' ')
+            _tree2source(right, lvl, output)
+            output.write(')')
+
+        elif isinstance(r.node, ast.operator):
+            op = r.node
+            if isinstance(op, ast.Add):
+                output.write('+')
+
+            elif isinstance(op, ast.Sub):
+                output.write('-')
+
+            elif isinstance(op, ast.Mult):
+                output.write('*')
+
+            elif isinstance(op, ast.MatMult):
+                output.write('@')
+
+            elif isinstance(op, ast.Div):
+                output.write('/')
+
+            elif isinstance(op, ast.Mod):
+                output.write('%')
+
+            elif isinstance(op, ast.Pow):
+                output.write('**')
+
+            elif isinstance(op, ast.LShift):
+                output.write('<<')
+
+            elif isinstance(op, ast.RShift):
+                output.write('>>')
+
+            elif isinstance(op, ast.BitOr):
+                output.write('|')
+
+            elif isinstance(op, ast.BitXor):
+                output.write('^')
+
+            elif isinstance(op, ast.BitAnd):
+                output.write('&')
+
+            elif isinstance(op, ast.FloorDiv):
+                output.write('//')
+
+        elif isinstance(r.node, ast.Num):
+            output.write(r.node.n)
+
+        elif isinstance(r.node, ast.Name):
+            identifier, _ = r.children
+            output.write(identifier.value)
+
+        elif isinstance(r.node, ast.Return):
+            output.write('return')
+            if r.children:
+                output.write(' ')
+                _tree2source(r.children[0], lvl, output)
+
+        elif isinstance(r.node, ast.Expr):
+            _tree2source(r.children[0], lvl, output)
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+        elif isinstance(r.node, ast.BinOp):
+            pass
+
+    result = io.StringIO()
+    _tree2source(root, 0, result)
+    result.seek(0)
+    return result.read()
