@@ -1,52 +1,31 @@
 import ast
+import astunparse
 from typing import List
+import uuid
 
 from .constants import PatchKind
 
 
-class Identifier(ast.AST):
-    value: str
-
-
-class IntValue(ast.AST):
-    value: int
-
-
-class ListOfNodes(ast.AST):
-    values: List[ast.AST]
-    name: str
-
-
 class Tree(object):
-    def __init__(self, node: ast.AST, pk: int = None, parent=None, children=None):
+    def __init__(self, node: ast.AST, parent=None):
         self.node: ast.AST = node
-        self.pk: int = pk
         self.parent: Tree = parent
-        self.children: List[Tree] = children or []
 
-    @property
-    def name(self) -> str:
-        if isinstance(self.node, Identifier):
-            s = f'ID: {self.node.value}'
-        elif isinstance(self.node, ast.Num):
-            s = f'Num: {self.node.n}'
-        elif isinstance(self.node, ListOfNodes):
-            s = self.node.name
-        else:
-            s = type(self.node).__name__
-        return f'{self.pk}_{s}' if self.pk is not None else s
+        self.pk: str = str(uuid.uuid4())
+        self.name = f'{type(self.node).__name__} #{self.pk}'
 
-    def add_child(self, child):
-        self.children.append(child)
-        child.parent = self
-
-    def is_leaf(self) -> bool:
-        return len(self.children) == 0
+        self.children: List[Tree] = []
+        self.size = 1
+        for child in ast.iter_child_nodes(self.node):
+            self.children.append(Tree(child, self))
+            self.size += self.children[-1].size
 
     def __str__(self):
-        return '{}{}'.format(self.name,
-                             ': [{}]'.format(', '.join(map(str, self.children)))
-                             if not self.is_leaf() else '')
+        children_desc = ', '.join(map(str, self.children))
+        return f'{self.name}: [{children_desc}]'
+
+    def to_code(self):
+        return astunparse.unparse(self.node)
 
 
 class Patch(object):
@@ -88,8 +67,10 @@ class PatchInsertUnder(Patch):
         return f'insert tree="{self.inserted_trees}" under node="{self.node.name}"'
 
     def get_weight(self) -> int:
-        from .utils import tree_size
-        return sum(map(tree_size, self.inserted_trees))
+        weight = 0
+        for tree in self.inserted_trees:
+            weight += tree.size
+        return weight
 
 
 class PatchInsertAbove(Patch):
@@ -115,11 +96,11 @@ class PatchInsertAbove(Patch):
                f'new_child_position={self.new_child_position}'
 
     def get_weight(self) -> int:
-        from .utils import tree_size, get_child_by_path
-        all_nodes = tree_size(self.inserted_tree)
+        from .utils import get_child_by_path
+        all_nodes = self.inserted_tree.size
         child = get_child_by_path(self.inserted_tree, self.new_child_position)
         if child is not None:
-            return all_nodes - tree_size(child)
+            return all_nodes - child.size
         return all_nodes
 
 
@@ -140,13 +121,13 @@ class PatchDelete(Patch):
                f'not_deleted_descendants = {self.not_deleted_descendants};'
 
     def get_weight(self) -> int:
-        from .utils import tree_size, get_child_by_path
+        from .utils import get_child_by_path
 
         if self.delete_root:
-            all_nodes = tree_size(self.tree)
+            all_nodes = self.tree.size
             child = get_child_by_path(self.tree, self.not_deleted_descendants)
             if child is not None:
-                return all_nodes - tree_size(child)
+                return all_nodes - child.size
             return all_nodes
 
         else:
@@ -154,5 +135,5 @@ class PatchDelete(Patch):
             not_deleted = set(self.not_deleted_descendants)
             for i, child in enumerate(self.tree.children):
                 if i not in not_deleted:
-                    deleted_nodes += tree_size(child)
+                    deleted_nodes += child.size
             return deleted_nodes

@@ -12,14 +12,14 @@ class TestPatchesStructure(unittest.TestCase):
                     '  a + b'
         right_code = 'a + b'
         list_of_changes = get_description_of_changes(left_code, right_code)
-        self.assertEqual(len(list_of_changes), 1)
+        self.assertEqual(len(list_of_changes), 2)
 
     def test_insert_patches_structure(self):
         left_code = 'a + b'
         right_code = 'def f():' \
                      '  a + b'
         list_of_changes = get_description_of_changes(left_code, right_code)
-        self.assertEqual(len(list_of_changes), 1)
+        self.assertEqual(len(list_of_changes), 2)
 
 
 if __name__ == '__main__':
