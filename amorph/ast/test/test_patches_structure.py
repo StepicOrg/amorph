@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from ddfeedback import get_description_of_changes
+from amorph.ast import get_description_of_changes
 
 logging.disable(logging.DEBUG)
 

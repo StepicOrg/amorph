@@ -2,13 +2,12 @@ from distutils.core import setup
 from setuptools import find_packages
 
 setup(
-    name='ddfeedback',
+    name='amorph',
     packages=find_packages(exclude=['test', '*.test', '*.test.*']),
     version='0.1',
-    description='Smart feedback for code quizzes',
-    author='konstantin.charkin',
-    author_email='93kostya@gmail.com',
+    description='Finds set of patches to transform one code into another',
+    author='konstantin.charkin <93kostya@gmail.com>, Nikita Lapkov <nikita.lapkov@stepik.org>',
     url='https://github.com/StepicOrg/data-driven-feedback',
-    keywords=['data-driven feedback'],
-    scripts=['bin/ddfeedback'],
+    install_requires=['astunparse'],
+    keywords=['transform', 'refactor', 'restructure', 'code'],
 )
