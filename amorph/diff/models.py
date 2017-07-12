@@ -101,4 +101,4 @@ class LinePatch(Patch):
     def __str__(self):
         desc = '\n'.join(['\t- {}'.format(patch) for patch in self.patches])
 
-        return 'With line #{} perform:\n{}\n'.format(self.lineno, desc)
+        return 'With line #{} perform:\n{}\n'.format(self.lineno + 1, desc)
