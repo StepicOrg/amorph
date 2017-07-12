@@ -8,6 +8,7 @@ class MatchKind(Enum):
 
 
 class PatchKind(Enum):
+    UNDEFINED = -1
     EDIT = 1
     INSERT_UNDER = 2
     INSERT_ABOVE = 3

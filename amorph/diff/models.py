@@ -1,4 +1,3 @@
-from typing import List
 
 
 class Patch(object):
@@ -9,43 +8,43 @@ class DeletePatch(Patch):
     """Cuts lines in range [start, end)"""
 
     def __init__(self, start: int, end: int):
-        self.start: int = start
-        self.end: int = end
+        self.start = start
+        self.end = end
 
     def __str__(self):
         if self.start + 1 == self.end:
-            return f'Delete line #{self.start + 1}'
+            return 'Delete line #{}'.format(self.start + 1)
         else:
-            return f'Delete lines #{self.start + 1} - #{self.end}'
+            return 'Delete lines #{} - #{}'.format(self.start + 1, self.end)
 
 
 class InsertPatch(Patch):
     """Insert lines to given position"""
 
-    def __init__(self, pos: int, lines: List[str]):
-        self.pos: int = pos
-        self.lines: List[str] = lines
+    def __init__(self, pos: int, lines: list):
+        self.pos = pos
+        self.lines = lines
 
     def __str__(self):
         piece = ''.join(self.lines)
-        return f'Insert {repr(piece)} starting from line #{self.pos + 1}'
+        return 'Insert {!r} starting from line #{}'.format(piece, self.pos + 1)
 
 
 class ReplacePatch(Patch):
     """Replaces lines in given range"""
 
-    def __init__(self, start: int, end: int, lines: List[str]):
-        self.start: int = start
-        self.end: int = end
-        self.lines: List[str] = lines
+    def __init__(self, start: int, end: int, lines: list):
+        self.start = start
+        self.end = end
+        self.lines = lines
 
     def __str__(self):
         piece = ''.join(self.lines)
 
         if self.start + 1 == self.end:
-            return f'Replace line #{self.start + 1} with {repr(piece)}'
+            return 'Replace line #{} with {!r}'.format(self.start + 1, piece)
         else:
-            return f'Replace lines #{self.start + 1} - #{self.end} with {repr(piece)}'
+            return 'Replace lines #{} - #{} with {!r}'.format(self.start + 1, self.end, piece)
 
 
 class StrPatch(object):
@@ -56,50 +55,50 @@ class StrDeletePatch(StrPatch):
     """Cuts chars in range [start, end)"""
 
     def __init__(self, start: int, end: int):
-        self.start: int = start
-        self.end: int = end
+        self.start = start
+        self.end = end
 
     def __str__(self):
         if self.start + 1 == self.end:
-            return f'Delete char #{self.start + 1}'
+            return 'Delete char #{}'.format(self.start + 1)
         else:
-            return f'Delete chars #{self.start + 1} - #{self.end}'
+            return 'Delete chars #{} - #{}'.format(self.start + 1, self.end)
 
 
 class StrInsertPatch(StrPatch):
     """Insert chars to given position"""
 
     def __init__(self, pos: int, piece: str):
-        self.pos: int = pos
-        self.piece: str = piece
+        self.pos = pos
+        self.piece = piece
 
     def __str__(self):
-        return f'Insert {repr(self.piece)} starting from position #{self.pos + 1}'
+        return 'Insert {!r} starting from position #{}'.format(self.piece, self.pos + 1)
 
 
 class StrReplacePatch(StrPatch):
     """Replaces chars in given range"""
 
     def __init__(self, start: int, end: int, piece: str):
-        self.start: int = start
-        self.end: int = end
-        self.piece: str = piece
+        self.start = start
+        self.end = end
+        self.piece = piece
 
     def __str__(self):
         if self.start + 1 == self.end:
-            return f'Replace char #{self.start + 1} with {repr(self.piece)}'
+            return 'Replace char #{} with {!r}'.format(self.start + 1, self.piece)
         else:
-            return f'Replace chars #{self.start + 1} - #{self.end} with {repr(self.piece)}'
+            return 'Replace chars #{} - #{} with {!r}'.format(self.start + 1, self.end, self.piece)
 
 
 class LinePatch(Patch):
     """Describes patch applied to specific string"""
 
-    def __init__(self, lineno: int, patches: List[StrPatch]):
-        self.lineno: int = lineno
-        self.patches: List[StrPatch] = patches
+    def __init__(self, lineno: int, patches: list):
+        self.lineno = lineno
+        self.patches = patches
 
     def __str__(self):
-        desc = '\n'.join([f'\t- {patch}' for patch in self.patches])
+        desc = '\n'.join(['\t- {}'.format(patch) for patch in self.patches])
 
-        return f'With line #{self.lineno} perform:\n{desc}\n'
+        return 'With line #{} perform:\n{}\n'.format(self.lineno, desc)

@@ -1,6 +1,5 @@
 import ast
 import logging
-from typing import List, Tuple, Optional
 
 from .constants import MatchKind
 from .models import (Tree, PatchDelete,
@@ -67,7 +66,7 @@ def match_two_tree(left_tree: Tree, right_tree: Tree, res=None):
     return n_nodes, (kind, ind), res
 
 
-def get_patches(left_tree: Tree, right_tree: Tree, res: dict, patches: list = None) -> List[Patch]:
+def get_patches(left_tree: Tree, right_tree: Tree, res: dict, patches: list = None) -> list:
     if patches is None:
         patches = []
     _, (kind, ind) = res.get((left_tree, right_tree))
@@ -112,12 +111,12 @@ def get_patches(left_tree: Tree, right_tree: Tree, res: dict, patches: list = No
                                        not_deleted_descendants=not_deleted_descendants))
         return get_patches(left_tree.children[ind], right_tree, res, patches)
 
-    assert False, f'unknown kind: {kind}'
+    assert False, 'unknown kind: {}'.format(kind)
 
 
 def pretty_print_tree(tree: Tree, indent=' ' * 2) -> str:
-    def _pretty_print_tree(tr: Tree, lvl: int, cur_res: List[str]):
-        cur_res.append(f'{lvl*indent}{tr.name}')
+    def _pretty_print_tree(tr: Tree, lvl: int, cur_res: list):
+        cur_res.append('{}{}'.format(lvl*indent, tr.name))
         for child in tr.children:
             _pretty_print_tree(child, lvl + 1, cur_res)
         return
@@ -127,7 +126,7 @@ def pretty_print_tree(tree: Tree, indent=' ' * 2) -> str:
     return '\n'.join(list_of_lines)
 
 
-def get_description_of_changes(left_code: str, right_code: str) -> List[Tuple[str, int]]:
+def get_description_of_changes(left_code: str, right_code: str) -> list:
     left_ast = ast.parse(left_code)
     right_ast = ast.parse(right_code)
 
@@ -155,7 +154,10 @@ def is_descendant(descendant: Tree, ancestor: Tree) -> bool:
     return False
 
 
-def get_child_by_path(root: Tree, path: List[int]) -> Optional[Tree]:
+def get_child_by_path(root: Tree, path: list):
+    """
+    :return: Tree node if child under specified path exists and None otherwise
+    """
     if not path:
         return root
 

@@ -1,5 +1,4 @@
 from difflib import SequenceMatcher
-from typing import List, Tuple, Callable, Generator
 from .models import (DeletePatch, InsertPatch, ReplacePatch, Patch,
                      StrDeletePatch, StrInsertPatch, StrReplacePatch, LinePatch)
 
@@ -11,8 +10,8 @@ class DiffPatcher(object):
     CUTOFF = 0.75
 
     def __init__(self,
-                 is_line_junk: Callable[[str], bool] = None,
-                 is_char_junk: Callable[[str], bool] = None):
+                 is_line_junk=None,
+                 is_char_junk=None):
         """
         Inits patcher based on diff
         :param is_line_junk: Single string argument function that \
@@ -20,10 +19,10 @@ class DiffPatcher(object):
         :param is_char_junk: Single string argument function that \
                              returns True if character should be ignored
         """
-        self.is_line_junk: Callable[[str], bool] = is_line_junk
-        self.is_char_junk: Callable[[str], bool] = is_char_junk
+        self.is_line_junk = is_line_junk
+        self.is_char_junk = is_char_junk
 
-    def get_patches(self, source: List[str], target: List[str]) -> Generator[Patch, None, None]:
+    def get_patches(self, source: list, target: list):
         """
         Returns list of patches for transforming text a to text b
         :param source: Lines of source string to transform
@@ -42,10 +41,10 @@ class DiffPatcher(object):
                 yield InsertPatch(start1, target[start2:end2])
 
     def _replace_with_matches(self,
-                              source: List[str],
-                              source_bounds: Tuple[int, int],
-                              target: List[str],
-                              target_bounds: Tuple[int, int]) -> Generator[Patch, None, None]:
+                              source: list,
+                              source_bounds: tuple,
+                              target: list,
+                              target_bounds: tuple):
         """
         Tries to match similar strings and compute inner patches of matches \
         or fails with plain lines changes
@@ -125,10 +124,10 @@ class DiffPatcher(object):
         yield from self._replace_auto(source, (src_best + 1, src_end), target, (tgt_best + 1, tgt_end))
 
     def _replace_auto(self,
-                      source: List[str],
-                      source_bounds: Tuple[int, int],
-                      target: List[str],
-                      target_bounds: Tuple[int, int]) -> Generator[Patch, None, None]:
+                      source: list,
+                      source_bounds: tuple,
+                      target: list,
+                      target_bounds: tuple):
         """
         Chooses type of patch to apply judging by indices bounds given
         :param source: Line slice of source string
@@ -151,8 +150,8 @@ class DiffPatcher(object):
 
 def get_patches(source: str,
                 target: str,
-                is_line_junk: Callable[[str], bool] = None,
-                is_char_junk: Callable[[str], bool] = None) -> Generator[Patch, None, None]:
+                is_line_junk=None,
+                is_char_junk=None):
     """
     Returns list of patches for transforming one code to another
     :param source: Source code to transform
