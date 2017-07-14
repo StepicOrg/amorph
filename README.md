@@ -1,31 +1,52 @@
 # Amorph
 Package for Python source code transformation.
 
-## Installation
-```bash
-python setup.py install
-```
-
-## Patch search
-Amorph provides two methods of getting patches for transforming source - diff-based approach and [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) matching. Currently first is ready to use and matching is in a state of active development.
-
-## Diff
 ```python
-from amorph.diff import get_patches
-
-source = '''
-def f(a, b):
-    return a + b
-'''
-
-target = '''
-def f(a, b):
-    return a + b + 5
-'''
-
-for patch in get_patches(source, target):
-    print(patch)
+>>> from amorph import patch_with_closest
+>>> source = '''
+... def f(a, b):
+...    return a + b
+... '''
+>>> samples = [
+... '''
+... def f(a, b):
+...     return a * b
+... ''',
+... '''
+... def f(a, b):
+...    return sum([a for i in range(b)])
+... '''
+... ]
+>>> for patch in patch_with_closest(source, samples):
+...     print(patch)
+With line #3 perform:
+	- Replace char #14 with '*'
 ```
 
-### Patch types
-Can be found under `amorph/diff/models.py`
+## Use cases
+
+### Specify patch method
+**NOTE** Currently only `diff` patching available, `ast` matching is WIP
+```python
+from amorph import patch_with_closest
+
+patches = patch_with_closest(source, samples, method='diff')
+```
+
+### Find closest code
+```python
+from amorph.utils import find_closest
+
+closest_sample = find_closest(source, sample)
+```
+
+### Custom metric
+```python
+from amorph import patch_with_closest
+
+def dummy_metric(source, sample):
+    return source.count('def') - sample.count('def')
+
+closest_sample = find_closest(source, samples, metric=dummy_metric)
+patches = patch_with_closest(source, samples, metric=dummy_metric)
+```

@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-from .models import (DeletePatch, InsertPatch, ReplacePatch, Patch,
+from .models import (DeletePatch, InsertPatch, ReplacePatch,
                      StrDeletePatch, StrInsertPatch, StrReplacePatch, LinePatch)
 
 
