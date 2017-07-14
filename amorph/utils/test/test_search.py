@@ -2,7 +2,7 @@ import logging
 import unittest
 
 from amorph.utils import find_closest
-from amorph.metric import string_similarity
+from amorph.metrics import string_similarity
 
 logging.disable(logging.DEBUG)
 

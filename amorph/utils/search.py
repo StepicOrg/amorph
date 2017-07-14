@@ -1,7 +1,7 @@
 from ..metrics import string_similarity
 
 
-def find_closest(source, samples, metric=string_similarity):
+def find_closest(source: str, samples: list, metric=string_similarity):
     """
     Finds closest code to the source by finding minimum of metric
     :param source: Source code

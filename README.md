@@ -28,9 +28,9 @@ With line #3 perform:
 ### Specify patch method
 **NOTE** Currently only `diff` patching available, `ast` matching is WIP
 ```python
-from amorph import patch_with_closest
+from amorph import patch_with_closest, Method
 
-patches = patch_with_closest(source, samples, method='diff')
+patches = patch_with_closest(source, samples, method=Method.DIFF)
 ```
 
 ### Find closest code

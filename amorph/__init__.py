@@ -1,1 +1,1 @@
-from .combo import patch_with_closest
+from .combo import patch_with_closest, Method
