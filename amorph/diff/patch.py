@@ -1,6 +1,29 @@
 from difflib import SequenceMatcher
-from .models import (DeletePatch, InsertPatch, ReplacePatch,
-                     StrDeletePatch, StrInsertPatch, StrReplacePatch, LinePatch)
+from amorph.models import DeletePatch, InsertPatch, ReplacePatch
+
+
+class Index(object):
+    def __init__(self, text):
+        self.lines = text.splitlines(keepends=True)
+        self.lens = [len(line) for line in self.lines]
+
+    def map(self, line, char):
+        return sum(self.lens[:line]) + char
+
+    def line_start(self, line):
+        return self.map(line, 0)
+
+    def line_end(self, line):
+        return self.map(line, self.lens[line])
+
+    def subtext(self, line_start, line_end):
+        return ''.join(self.lines[line_start:line_end])
+
+    def __getitem__(self, key):
+        return self.lines[key]
+
+    def __len__(self):
+        return len(self.lines)
 
 
 class DiffPatcher(object):
@@ -22,7 +45,7 @@ class DiffPatcher(object):
         self.is_line_junk = is_line_junk
         self.is_char_junk = is_char_junk
 
-    def get_patches(self, source: list, target: list):
+    def get_patches(self, source: Index, target: Index):
         """
         Returns list of patches for transforming text a to text b
         :param source: Lines of source string to transform
@@ -35,15 +58,15 @@ class DiffPatcher(object):
                 yield from self._replace_with_matches(source, (start1, end1), target, (start2, end2))
 
             elif tag == 'delete':
-                yield DeletePatch(start1, end1)
+                yield DeletePatch(source.line_start(start1), source.line_end(end1-1))
 
             elif tag == 'insert':
-                yield InsertPatch(start1, target[start2:end2])
+                yield InsertPatch(source.line_start(start1), target.subtext(start2, end2))
 
     def _replace_with_matches(self,
-                              source: list,
+                              source: Index,
                               source_bounds: tuple,
-                              target: list,
+                              target: Index,
                               target_bounds: tuple):
         """
         Tries to match similar strings and compute inner patches of matches \
@@ -91,7 +114,9 @@ class DiffPatcher(object):
         if best_ratio < self.CUTOFF:
             if src_equal is None:
                 # no close matches or equal strings, plain replace
-                yield ReplacePatch(src_start, src_end, target[tgt_start:tgt_end])
+                yield ReplacePatch(source.line_start(src_start),
+                                   source.line_end(src_end-1),
+                                   target.subtext(tgt_start, tgt_end))
                 return
             # no close matches but identical strings found
             best_ratio, src_best, tgt_best = 1.0, src_equal, tgt_equal
@@ -105,28 +130,28 @@ class DiffPatcher(object):
         # dump patches for two best matched strings
         src_close, tgt_close = source[src_best], target[tgt_best]
         if src_equal is None:
-            patches = []
-
             cruncher.set_seqs(src_close, tgt_close)
             for tag, start1, end1, start2, end2 in cruncher.get_opcodes():
                 if tag == 'replace':
-                    patches.append(StrReplacePatch(start1, end1, tgt_close[start2:end2]))
+                    yield ReplacePatch(source.map(src_best, start1),
+                                       source.map(src_best, end1),
+                                       tgt_close[start2:end2])
 
                 elif tag == 'delete':
-                    patches.append(StrDeletePatch(start1, end1))
+                    yield DeletePatch(source.map(src_best, start1),
+                                      source.map(src_best, end1))
 
                 elif tag == 'insert':
-                    patches.append(StrInsertPatch(start1, tgt_close[start2:end2]))
-
-            yield LinePatch(src_best, patches)
+                    yield InsertPatch(source.map(src_best, start1),
+                                      tgt_close[start2:end2])
 
         # dump patches after synch point
         yield from self._replace_auto(source, (src_best + 1, src_end), target, (tgt_best + 1, tgt_end))
 
     def _replace_auto(self,
-                      source: list,
+                      source: Index,
                       source_bounds: tuple,
-                      target: list,
+                      target: Index,
                       target_bounds: tuple):
         """
         Chooses type of patch to apply judging by indices bounds given
@@ -143,9 +168,9 @@ class DiffPatcher(object):
             if tgt_start < tgt_end:
                 yield from self._replace_with_matches(source, (src_start, src_end), target, (tgt_start, tgt_end))
             else:
-                yield DeletePatch(src_start, src_end)
+                yield DeletePatch(source.line_start(src_start), source.line_end(src_end-1))
         elif tgt_start < tgt_end:
-            yield InsertPatch(src_start, target[tgt_start:tgt_end])
+            yield InsertPatch(source.line_start(src_start), target.subtext(tgt_start, tgt_end))
 
 
 def get_patches(source: str,
@@ -162,8 +187,5 @@ def get_patches(source: str,
                          returns True if character should be ignored
     :return: List of patches
     """
-    source = source.splitlines(keepends=True)
-    target = target.splitlines(keepends=True)
-
     d = DiffPatcher(is_line_junk, is_char_junk)
-    yield from d.get_patches(source, target)
+    yield from d.get_patches(Index(source), Index(target))

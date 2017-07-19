@@ -10,7 +10,7 @@ Package for Python source code transformation.
 >>> samples = [
 ... '''
 ... def f(a, b):
-...     return a * b
+...    return a * b
 ... ''',
 ... '''
 ... def f(a, b):
@@ -19,17 +19,24 @@ Package for Python source code transformation.
 ... ]
 >>> for patch in patch_with_closest(source, samples):
 ...     print(patch)
-With line #3 perform:
-	- Replace char #14 with '*'
+Replace char #26 with '*'
 ```
 
 ## Use cases
 
+### Patch with given sample
+```python
+from amorph import patch_with_sample
+
+patches = patch_with_sample(source, sample)
+```
+
 ### Specify patch method
 **NOTE** Currently only `diff` patching available, `ast` matching is WIP
 ```python
-from amorph import patch_with_closest, Method
+from amorph import patch_with_closest, patch_with_sample, Method
 
+patches = patch_with_sample(source, sample, method=Method.DIFF)
 patches = patch_with_closest(source, samples, method=Method.DIFF)
 ```
 

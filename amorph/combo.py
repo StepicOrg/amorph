@@ -10,14 +10,18 @@ class Method(Enum):
 
 
 def patch_with_closest(source: str, samples: list, method: Method = Method.DIFF, metric=string_similarity):
-    if not isinstance(method, Method):
-        raise InvalidArgumentException('Unknown method {!r}'.format(method))
-
     matched_sample = find_closest(source, samples, metric)
 
     # no sample close sample found
     if matched_sample is None:
         return empty_generator()
 
+    return patch_with_sample(source, matched_sample, method)
+
+
+def patch_with_sample(source: str, sample: str, method: Method = Method.DIFF):
+    if not isinstance(method, Method):
+        raise InvalidArgumentException('Unknown method {!r}'.format(method))
+
     if method == Method.DIFF:
-        return diff.get_patches(source, matched_sample)
+        return diff.get_patches(source, sample)

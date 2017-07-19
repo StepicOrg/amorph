@@ -3,26 +3,12 @@ import unittest
 import textwrap
 
 from amorph.diff import get_patches
-from amorph.diff.models import *
+from amorph.models import DeletePatch, InsertPatch, ReplacePatch
 
 logging.disable(logging.DEBUG)
 
 
 class TestPatches(unittest.TestCase):
-    def test_linepatch(self):
-        left_code = textwrap.dedent('''
-                    def f(a, b):
-                        return a + b
-                    ''')
-        right_code = textwrap.dedent('''
-                    def f(a, b):
-                        return a + b + 5
-                    ''')
-        list_of_changes = list(get_patches(left_code, right_code))
-
-        self.assertEqual(len(list_of_changes), 1)
-        self.assertIsInstance(list_of_changes[0], LinePatch)
-
     def test_deletepatch(self):
         left_code = textwrap.dedent('''
                     def f(a, b):
