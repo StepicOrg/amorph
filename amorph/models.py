@@ -3,6 +3,14 @@
 class Patch(object):
     """Describes patch applied to code"""
 
+    def __str__(self):
+        raise NotImplementedError
+
+    def to_dict(self):
+        result = {'type': type(self).__name__}
+        result.update(self.__dict__)
+        return result
+
 
 class DeletePatch(Patch):
     """Cuts chars in range [start, end)"""

@@ -1,0 +1,6 @@
+matplotlib==2.0.2
+seaborn==0.8
+pandas==0.20.3
+tqdm==4.14.0
+numpy==1.13.1
+amorph==0.1
