@@ -19,7 +19,13 @@ class DeletePatch(Patch):
 
 
 class InsertPatch(Patch):
-    """Insert chars to given position"""
+    """
+    Insert chars to given position
+
+    WARNING: this patch means "insert string before character in position `pos`"
+             so if `pos == len(source_string)` it means that `piece` should be
+             appended to the end of `source_string`
+    """
 
     def __init__(self, pos: int, piece: str):
         self.pos = pos

@@ -32,7 +32,7 @@ patches = patch_with_sample(source, sample)
 ```
 
 ### Specify patch method
-**NOTE** Currently only `diff` patching available, `ast` matching is WIP
+**NOTE** Currently only `diff` and `tokens` patching methods available, `ast` matching is WIP
 ```python
 from amorph import patch_with_closest, patch_with_sample, Method
 

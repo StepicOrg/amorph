@@ -7,7 +7,7 @@ setup(
     version='0.1',
     description='Finds set of patches to transform one code into another',
     author='konstantin.charkin <93kostya@gmail.com>, Nikita Lapkov <nikita.lapkov@stepik.org>',
-    url='https://github.com/StepicOrg/data-driven-feedback',
-    install_requires=['astunparse'],
+    url='https://github.com/StepicOrg/amorph',
+    install_requires=['astunparse', 'asttokens'],
     keywords=['transform', 'refactor', 'restructure', 'code'],
 )
