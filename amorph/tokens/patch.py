@@ -65,7 +65,7 @@ def get_patches(source: str, target: str):
 
         # append to the end case. see warning in InsertPatch definition
         if start1 == src_len:
-            src_start = src_tokens[start1-1].endpos + 1
+            src_start = src_tokens[start1-1].endpos
         else:
             src_start = src_tokens[start1].startpos
 
