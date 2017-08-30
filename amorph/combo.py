@@ -10,17 +10,21 @@ class Method(Enum):
     TOKENS = 'tokens'
 
 
-def patch_with_closest(source: str, samples: list, method: Method = Method.DIFF, metric=string_similarity):
-    matched_sample = find_closest(source, samples, metric)
+def patch_with_closest(source, samples: list, method: Method = Method.DIFF, metric=string_similarity, key=None):
+    matched_sample = find_closest(source, samples, metric, key)
 
     # no sample close sample found
     if matched_sample is None:
         return empty_generator()
 
-    return patch_with_sample(source, matched_sample, method)
+    return patch_with_sample(source, matched_sample, method, key)
 
 
-def patch_with_sample(source: str, sample: str, method: Method = Method.DIFF):
+def patch_with_sample(source, sample, method: Method = Method.DIFF, key=None):
+    if key:
+        source = key(source)
+        sample = key(sample)
+
     if not isinstance(method, Method):
         raise InvalidArgumentException('Unknown method {!r}'.format(method))
 

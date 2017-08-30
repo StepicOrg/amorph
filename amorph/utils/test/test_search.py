@@ -1,10 +1,7 @@
-import logging
 import unittest
 
 from amorph.utils import find_closest
 from amorph.metrics import string_similarity
-
-logging.disable(logging.DEBUG)
 
 
 class TestSearch(unittest.TestCase):
