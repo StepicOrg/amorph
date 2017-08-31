@@ -1,3 +1,4 @@
+from enum import Enum
 
 
 class Patch(object):
@@ -10,6 +11,17 @@ class Patch(object):
         result = {'type': type(self).__name__}
         result.update(self.__dict__)
         return result
+
+    @staticmethod
+    def from_dict(raw):
+        if raw['type'] == 'delete':
+            return DeletePatch(raw['start'], raw['stop'])
+
+        elif raw['type'] == 'insert':
+            return InsertPatch(raw['pos'], raw['text'])
+
+        elif raw['type'] == 'update':
+            return ReplacePatch(raw['start'], raw['stop'], raw['value'])
 
 
 class DeletePatch(Patch):

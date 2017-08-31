@@ -8,6 +8,6 @@ setup(
     description='Finds set of patches to transform one code into another',
     author='konstantin.charkin <93kostya@gmail.com>, Nikita Lapkov <nikita.lapkov@stepik.org>',
     url='https://github.com/StepicOrg/amorph',
-    install_requires=['astunparse', 'asttokens'],
+    install_requires=['schema', 'requests', 'asttokens', 'astunparse'],
     keywords=['transform', 'refactor', 'restructure', 'code'],
 )

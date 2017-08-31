@@ -1,1 +1,1 @@
-from .utils import get_description_of_changes
+from .patch import get_patches

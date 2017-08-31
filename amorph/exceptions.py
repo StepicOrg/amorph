@@ -6,3 +6,7 @@ class AmorphException(Exception):
 
 class InvalidArgumentException(AmorphException):
     pass
+
+
+class InvalidApiResponseException(AmorphException):
+    pass

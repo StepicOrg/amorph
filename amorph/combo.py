@@ -1,4 +1,4 @@
-from . import diff, tokens
+from . import diff, tokens, ast
 from .utils import find_closest, empty_generator
 from .metrics import string_similarity
 from .exceptions import InvalidArgumentException
@@ -8,6 +8,7 @@ from enum import Enum
 class Method(Enum):
     DIFF = 'diff'
     TOKENS = 'tokens'
+    AST = 'ast'
 
 
 def patch_with_closest(source, samples: list, method: Method = Method.DIFF, metric=string_similarity, key=None):
@@ -32,3 +33,5 @@ def patch_with_sample(source, sample, method: Method = Method.DIFF, key=None):
         return diff.get_patches(source, sample)
     elif method == Method.TOKENS:
         return tokens.get_patches(source, sample)
+    elif method == Method.AST:
+        return ast.get_patches(source, sample)
