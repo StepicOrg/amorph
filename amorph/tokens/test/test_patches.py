@@ -65,5 +65,15 @@ class TestPatches(unittest.TestCase):
         self.assertIsInstance(patch, InsertPatch)
         self.assertEqual(patch.pos, len(left_code))
 
+    def test_empty_source(self):
+        left_code = '# some code here'
+        right_code = 'print("Hello World");'
+        list_of_changes = list(get_patches(left_code, right_code))
+
+        self.assertEqual(len(list_of_changes), 1)
+        patch = list_of_changes[0]
+        self.assertIsInstance(patch, InsertPatch)
+        self.assertEqual(patch.pos, 0)
+
 if __name__ == '__main__':
     unittest.main()

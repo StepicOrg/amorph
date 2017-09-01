@@ -63,14 +63,17 @@ def get_patches(source: str, target: str):
         if type == 'equal':
             continue
 
-        # append to the end case. see warning in InsertPatch definition
-        if start1 == src_len:
-            src_start = src_tokens[start1-1].endpos
-        else:
-            src_start = src_tokens[start1].startpos
-
         if type != 'insert':
+            src_start = src_tokens[start1].startpos
             src_end = src_tokens[end1-1].endpos
+        else:
+            if src_len == 0:
+                src_start = 0
+            # append to the end case. see warning in InsertPatch definition
+            elif start1 == src_len:
+                src_start = src_tokens[start1 - 1].endpos
+            else:
+                src_start = src_tokens[start1].startpos
 
         if type != 'delete':
             tgt_start = tgt_tokens[start2].startpos
