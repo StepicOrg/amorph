@@ -21,7 +21,7 @@ raw_patches_schema = Schema([
         'type': 'update',
         'start': PositiveInt(),
         'stop': PositiveInt(),
-        'value': Use(str),
+        'text': Use(str),
     }
 ])
 

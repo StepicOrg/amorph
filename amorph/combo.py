@@ -14,7 +14,7 @@ class Method(Enum):
 def patch_with_closest(source, samples: list, method: Method = Method.DIFF, metric=string_similarity, key=None):
     matched_sample = find_closest(source, samples, metric, key)
 
-    # no sample close sample found
+    # no close sample found
     if matched_sample is None:
         return empty_generator()
 
