@@ -1,8 +1,17 @@
-class Patch(object):
+import abc
+
+
+class Patch(abc.ABC):
     """Describes patch applied to code"""
 
+    @abc.abstractmethod
     def to_dict(self):
-        raise NotImplementedError
+        pass
+
+    @property
+    @abc.abstractmethod
+    def size(self):
+        pass
 
     @staticmethod
     def from_dict(raw):
@@ -15,8 +24,9 @@ class Patch(object):
         elif raw['type'] == 'update':
             return ReplacePatch(raw['start'], raw['stop'], raw['text'])
 
+    @abc.abstractmethod
     def __str__(self):
-        raise NotImplementedError
+        pass
 
 
 class DeletePatch(Patch):
@@ -32,6 +42,10 @@ class DeletePatch(Patch):
             'start': self.start,
             'stop': self.stop
         }
+
+    @property
+    def size(self):
+        return self.stop - self.start
 
     def __str__(self):
         if self.start + 1 == self.stop:
@@ -60,6 +74,10 @@ class InsertPatch(Patch):
             'text': self.text
         }
 
+    @property
+    def size(self):
+        return len(self.text)
+
     def __str__(self):
         return 'Insert {!r} starting from position #{}'.format(self.text, self.pos)
 
@@ -79,6 +97,10 @@ class ReplacePatch(Patch):
             'stop': self.stop,
             'text': self.text
         }
+
+    @property
+    def size(self):
+        return self.stop - self.start + len(self.text)
 
     def __str__(self):
         if self.start + 1 == self.stop:
