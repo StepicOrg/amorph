@@ -18,7 +18,7 @@ raw_patches_schema = Schema([
         'pos': PositiveInt(),
         'text': Use(str)
     }, {
-        'type': 'update',
+        'type': 'replace',
         'start': PositiveInt(),
         'stop': PositiveInt(),
         'text': Use(str),

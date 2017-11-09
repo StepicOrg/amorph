@@ -21,7 +21,7 @@ class Patch(abc.ABC):
         elif raw['type'] == 'insert':
             return InsertPatch(raw['pos'], raw['text'])
 
-        elif raw['type'] == 'update':
+        elif raw['type'] == 'replace':
             return ReplacePatch(raw['start'], raw['stop'], raw['text'])
 
     @abc.abstractmethod
