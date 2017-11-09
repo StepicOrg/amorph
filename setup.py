@@ -4,7 +4,7 @@ from setuptools import find_packages
 setup(
     name='amorph',
     packages=find_packages(exclude=['test', '*.test', '*.test.*']),
-    version='0.1.1',
+    version='0.1.2',
     description='Finds set of patches to transform one code into another',
     author='konstantin.charkin <93kostya@gmail.com>, Nikita Lapkov <nikita.lapkov@stepik.org>',
     url='https://github.com/StepicOrg/amorph',
